@@ -58,5 +58,8 @@ def download_all():
     # Send the zip file as a response
     return send_file(memory_file, mimetype='application/zip', as_attachment=True, download_name='all_files.zip')
 
-if __name__ == '__main__':
+def main():
     app.run(host='0.0.0.0', port=8080)
+
+if __name__ == '__main__':
+    main()

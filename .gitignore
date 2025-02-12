@@ -1,2 +1,11 @@
 
+# Python-specific files
+*.pyc
+__pycache__/
 .venv/
+*.log
+
+# Package build files
+build/
+dist/
+*.egg-info/
