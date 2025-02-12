@@ -2,10 +2,13 @@ from flask import Flask, send_from_directory, send_file, render_template_string
 import os
 import zipfile
 import io
+import tempfile
+import atexit
 
 app = Flask(__name__)
 BASE_DIR = os.getcwd()
-ZIP_FILE_PATH = os.path.join(BASE_DIR, "all_files.zip")
+temp_dir = tempfile.TemporaryDirectory()
+ZIP_FILE_PATH = os.path.join(temp_dir.name, "all_files.zip")
 zip_file_size = 0
 
 def create_zip_file():
@@ -15,7 +18,7 @@ def create_zip_file():
             for file in files:
                 file_path = os.path.join(root, file)
                 zipf.write(file_path, os.path.relpath(file_path, BASE_DIR))
-    zip_file_size = os.path.getsize(ZIP_FILE_PATH)  # Get the size of the zip file in bytes
+    zip_file_size = os.path.getsize(ZIP_FILE_PATH)
 
 @app.route('/', defaults={'req_path': ''})
 @app.route('/<path:req_path>')
@@ -28,7 +31,6 @@ def index(req_path):
     if os.path.isfile(abs_path):
         return send_from_directory(os.path.dirname(abs_path), os.path.basename(abs_path), as_attachment=True)
 
-    files = os.listdir(abs_path)
     template = '''
     <!DOCTYPE html>
     <html lang="en">
@@ -54,9 +56,8 @@ def index(req_path):
     </body>
     </html>
     '''
-    parent_dir = os.path.dirname(req_path) if req_path else None
     zip_size = format_size(zip_file_size)
-    return render_template_string(template, files=files, req_path=req_path, current_dir=abs_path, parent_dir=parent_dir, zip_size=zip_size)
+    return render_template_string(template, current_dir=abs_path, zip_size=zip_size)
 
 @app.route('/download-all')
 def download_all():
@@ -76,6 +77,10 @@ def main():
     print("Creating zip file...")
     create_zip_file()
     print(f"Zip file created: {ZIP_FILE_PATH} ({format_size(zip_file_size)})")
+    
+    # Ensure the temporary directory is cleaned up on exit
+    atexit.register(temp_dir.cleanup)
+    
     app.run(host='0.0.0.0', port=8080)
 
 if __name__ == '__main__':
