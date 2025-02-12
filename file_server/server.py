@@ -1,10 +1,12 @@
-from flask import Flask, request, send_from_directory, send_file, render_template_string
 import os
+from flask import Flask, send_from_directory, send_file, render_template_string
 import zipfile
 import io
 
 app = Flask(__name__)
-BASE_DIR = "C:/Users/SmartBeat/Documents/test_dir"  # Change this to your shared directory
+
+# Set BASE_DIR to the directory from which the script is executed
+BASE_DIR = os.getcwd()
 
 @app.route('/')
 def index():
@@ -46,7 +48,6 @@ def download_file(filename):
 
 @app.route('/download-all')
 def download_all():
-    # Create an in-memory ZIP file
     memory_file = io.BytesIO()
     with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(BASE_DIR):
@@ -54,11 +55,12 @@ def download_all():
                 file_path = os.path.join(root, file)
                 zipf.write(file_path, os.path.relpath(file_path, BASE_DIR))
     memory_file.seek(0)
-    
-    # Send the zip file as a response
     return send_file(memory_file, mimetype='application/zip', as_attachment=True, download_name='all_files.zip')
 
 def main():
+    global BASE_DIR
+    BASE_DIR = os.getcwd()  # Update BASE_DIR at runtime to the current working directory
+    print(f"Serving files from: {BASE_DIR}")
     app.run(host='0.0.0.0', port=8080)
 
 if __name__ == '__main__':
