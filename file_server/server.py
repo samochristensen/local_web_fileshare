@@ -1,7 +1,6 @@
-from flask import Flask, send_from_directory, send_file, render_template_string
+from flask import Flask, send_from_directory, send_file, render_template_string, url_for
 import os
 import zipfile
-import io
 import tempfile
 import atexit
 
@@ -31,6 +30,9 @@ def index(req_path):
     if os.path.isfile(abs_path):
         return send_from_directory(os.path.dirname(abs_path), os.path.basename(abs_path), as_attachment=True)
 
+    files = os.listdir(abs_path)
+    files = sorted(files, key=lambda x: (os.path.isdir(os.path.join(abs_path, x)), x.lower()))  # Sort directories first
+
     template = '''
     <!DOCTYPE html>
     <html lang="en">
@@ -51,13 +53,29 @@ def index(req_path):
         </style>
     </head>
     <body>
-        <p class="path">Source Directory on Host Machine: {{ current_dir }}</p>
-        <a href="/download-all" class="button">Download All as ZIP ({{ zip_size }})</a>
+        <h2 class="path">Shared Directory on Host Machine: {{ current_dir }}</h2>
+        <a href="/download-all" class="button">Download Directory ({{ zip_size }})</a>
+        <h2>Download individual files:</h2>
+        <ul>
+            {% if parent_dir %}
+                <li><a href="{{ url_for('index', req_path=parent_dir) }}">..</a></li>
+            {% endif %}
+            {% for file in files %}
+                <li>
+                    {% if os.path.isdir(os.path.join(current_dir, file)) %}
+                        <a href="{{ url_for('index', req_path=req_path + '/' + file if req_path else file) }}">{{ file }}/</a>
+                    {% else %}
+                        <a href="{{ url_for('index', req_path=req_path + '/' + file if req_path else file) }}">{{ file }}</a>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
     </body>
     </html>
     '''
+    parent_dir = os.path.dirname(req_path) if req_path else None
     zip_size = format_size(zip_file_size)
-    return render_template_string(template, current_dir=abs_path, zip_size=zip_size)
+    return render_template_string(template, files=files, req_path=req_path, current_dir=abs_path, parent_dir=parent_dir, zip_size=zip_size, os=os)
 
 @app.route('/download-all')
 def download_all():
@@ -77,10 +95,8 @@ def main():
     print("Creating zip file...")
     create_zip_file()
     print(f"Zip file created: {ZIP_FILE_PATH} ({format_size(zip_file_size)})")
-    
-    # Ensure the temporary directory is cleaned up on exit
+
     atexit.register(temp_dir.cleanup)
-    
     app.run(host='0.0.0.0', port=8080)
 
 if __name__ == '__main__':
