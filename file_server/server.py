@@ -1,16 +1,23 @@
-import os
 from flask import Flask, send_from_directory, send_file, render_template_string
+import os
 import zipfile
 import io
 
 app = Flask(__name__)
-
-# Set BASE_DIR to the directory from which the script is executed
 BASE_DIR = os.getcwd()
 
-@app.route('/')
-def index():
-    files = os.listdir(BASE_DIR)
+@app.route('/', defaults={'req_path': ''})
+@app.route('/<path:req_path>')
+def index(req_path):
+    abs_path = os.path.join(BASE_DIR, req_path)
+
+    if not os.path.exists(abs_path):
+        return "<h1>404: Directory not found</h1>", 404
+
+    if os.path.isfile(abs_path):
+        return send_from_directory(os.path.dirname(abs_path), os.path.basename(abs_path), as_attachment=True)
+
+    files = os.listdir(abs_path)
     template = '''
     <!DOCTYPE html>
     <html lang="en">
@@ -32,21 +39,13 @@ def index():
     </head>
     <body>
         <h1>File Server</h1>
-        <p class="path">Shared Directory on Host Machine: {{ current_dir }}</p>
-        <a href="/download-all" class="button">Download All as ZIP</a>
-        <ul>
-            {% for file in files %}
-                <li><a href="/download/{{ file }}">{{ file }}</a></li>
-            {% endfor %}
-        </ul>
+        <p class="path">Current Directory: {{ current_dir }}</p>
+        <a href="/download-all" class="button">Download Directory -- Zipped </a>
     </body>
     </html>
     '''
-    return render_template_string(template, files=files, current_dir=BASE_DIR)
-
-@app.route('/download/<filename>')
-def download_file(filename):
-    return send_from_directory(BASE_DIR, filename, as_attachment=True)
+    parent_dir = os.path.dirname(req_path) if req_path else None
+    return render_template_string(template, files=files, req_path=req_path, current_dir=abs_path, parent_dir=parent_dir)
 
 @app.route('/download-all')
 def download_all():
@@ -61,7 +60,7 @@ def download_all():
 
 def main():
     global BASE_DIR
-    BASE_DIR = os.getcwd()  # Update BASE_DIR at runtime to the current working directory
+    BASE_DIR = os.getcwd()
     print(f"Serving files from: {BASE_DIR}")
     app.run(host='0.0.0.0', port=8080)
 
