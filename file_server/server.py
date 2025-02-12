@@ -27,10 +27,12 @@ def index():
             a:hover { text-decoration: underline; }
             .button { display: inline-block; padding: 10px 20px; color: white; background-color: #007BFF; text-decoration: none; border-radius: 5px; }
             .button:hover { background-color: #0056b3; }
+            .path { font-size: 0.9em; color: #555; }
         </style>
     </head>
     <body>
-        <h1>Available Files</h1>
+        <h1>File Server</h1>
+        <p class="path">Shared Directory on Host Machine: {{ current_dir }}</p>
         <a href="/download-all" class="button">Download All as ZIP</a>
         <ul>
             {% for file in files %}
@@ -40,7 +42,7 @@ def index():
     </body>
     </html>
     '''
-    return render_template_string(template, files=files)
+    return render_template_string(template, files=files, current_dir=BASE_DIR)
 
 @app.route('/download/<filename>')
 def download_file(filename):
