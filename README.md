@@ -8,12 +8,13 @@ A simple Python-based file-sharing server with a web interface. It lets you brow
 
 1. **Clone the repository** (or navigate to your project directory):
     ```sh
-    cd local_web_fileshare
+    cd file_server
     ```
 
 2. **Set up a virtual environment** (recommended):
     ```sh
-    python -m venv venv
+    python -m venv .venv
+    pip install -r requirements.txt
     source venv/bin/activate  # On Windows: venv\Scripts\activate
     ```
 
