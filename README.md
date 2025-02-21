@@ -14,8 +14,8 @@ A simple Python-based file-sharing server with a web interface. It lets you brow
 2. **Set up a virtual environment** (recommended):
     ```sh
     python -m venv .venv
+    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
     pip install -r requirements.txt
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
     ```
 
 3. **Install the project as a package**:
